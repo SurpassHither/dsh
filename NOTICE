@@ -1,0 +1,58 @@
+# Attribution and Notice
+
+**DSH for TOS** (app ID: `dsh`) is an **unofficial TerraMaster TOS package** of
+**DeepSeek Harness (DSH)**, packaged and maintained by SurpassHither.
+
+## Upstream project
+
+| Item | Value |
+|---|---|
+| Project | DeepSeek Harness (DSH) |
+| Source | <https://github.com/deepseek-ai/deepseek-harness> |
+| Copyright | Copyright (c) 2026 DeepSeek |
+| License | **MIT** (full text in `THIRD_PARTY_NOTICES.md`) |
+| Version | See `BUILD-INFO.txt` and `payload/BUILD-INFO.txt` in the app directory |
+
+## What this package changes
+
+This app **does not patch** DSH's source code. It packages DSH as-is and adds host
+integration plus a small shell plugin that wraps the existing DOM:
+
+1. Ships a fixed Node.js runtime (official Linux x64 build, MIT) so TOS does not need Node preinstalled
+2. Ships the DSH npm release package `@deepseek-ai/dsh` (MIT) and its production dependencies
+3. Seeds a DSH profile; at install time it generates the `pageHosts` config from the local IP/hostname
+4. Ships the open-source plugin `@he0119/dsh-tailnet-admin` (MIT), used to disable the
+   browser session check so the reverse-proxied page works
+5. Provides the systemd unit, nginx reverse-proxy config, install/uninstall scripts and documentation
+6. Since 1.1.0, ships the local voice runtime `sherpa-onnx-linux-x64` (Apache-2.0) plus
+   SenseVoice `tokens.txt` / Silero VAD, and enables voice input in the profile; the
+   239 MB recognition model is still downloaded by DSH on first use
+7. The Office preview component `@deepseek-ai/libreoffice-kit-wasm` is installed on demand
+   (see README)
+8. Ships the sidebar shell plugin `@surpasshither/dsh-shell-ui` (MIT): UI-only workspace
+   categories, blue running indicators and a mobile-app entry point. It does not modify
+   DSH's source and only wraps the existing DOM.
+9. A planned mobile app (separate package) will add local login and TOTP in front of DSH;
+   this package does not include it and does not modify DSH's source
+
+## Trademarks
+
+- "DeepSeek" and "DeepSeek Harness" are trademarks of **DeepSeek**.
+- This app is **not** an official DeepSeek product and is not endorsed or authorized by
+  DeepSeek. Following the upstream
+  [BRAND_GUIDELINES](https://github.com/deepseek-ai/deepseek-harness/blob/master/BRAND_GUIDELINES.md),
+  the project name uses the **recommended short form "DSH"**, and the full name appears
+  only in descriptive text.
+- "TerraMaster" and "TOS" are trademarks of TerraMaster. This app is likewise not an
+  official TerraMaster product.
+
+## Disclaimer
+
+This app is provided "as is" under the MIT license, without warranty of any kind. DSH is
+a developer preview and has **not been security-audited**; it is a coding agent capable
+of executing commands. Users must assess the risk themselves and use it only within the
+directories and network scope they grant.
+
+## Contact
+
+<https://github.com/SurpassHither/dsh/issues>
