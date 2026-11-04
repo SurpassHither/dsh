@@ -1,0 +1,64 @@
+[Unit]
+Description=DSH for TOS (DeepSeek Harness web UI, bundled Node runtime)
+Documentation=https://github.com/SurpassHither/dsh
+After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Restart=on-failure
+RestartSec=5
+Type=simple
+User=dsh-user
+Group=dsh-user
+WorkingDirectory=/usr/local/dsh
+
+# Data location: system disk by default (exists on every model); postinst probes
+# data volumes and writes the real path into dsh.env, which overrides these --
+# EnvironmentFile has higher priority than Environment.
+Environment=HOME=/var/lib/dsh
+Environment=DSH_HOME=/var/lib/dsh/dsh
+
+# Listen on loopback only; port and trusted hosts come from the env file
+# (postinst generates them from this machine's IPs/hostname).
+# NOTE: the EnvironmentFile must exist: DSH's Host/Origin fence only trusts the
+#       --trusted-host list, and omitting it makes every /api request 403
+#       (the classic "page opens but nothing works" symptom).
+EnvironmentFile=-/usr/local/dsh/dsh.env
+
+# Assemble argv in a shell wrapper: systemd ExecStart only expands ${VAR} and
+# cannot split one variable into multiple arguments, while --trusted-host must
+# be repeated once per host.
+ExecStart=/usr/local/dsh/bin/start-dsh.sh
+TimeoutStartSec=60
+TimeoutStopSec=20
+
+# Restart on crash (guide 8.7.1); App Center still owns start/stop and upgrades.
+# This app is a coding agent and must read/write user-authorized workspaces, so
+# ProtectSystem=full instead of strict; ProtectHome=true and PrivateTmp=true do
+# not affect it (it does not use /home and does not rely on a shared /tmp).
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RemoveIPC=true
+SystemCallArchitectures=native
+ReadWritePaths=-/var/lib/dsh -/Volume1/@apps/dsh -/Volume2/@apps/dsh -/Volume3/@apps/dsh
+UMask=0027
+MemoryMax=4G
+CPUQuota=400%
+LimitNOFILE=65536
+LimitNPROC=512
+
+[Install]
+WantedBy=multi-user.target

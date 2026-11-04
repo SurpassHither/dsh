@@ -1,0 +1,541 @@
+#!/bin/bash
+# ============================================================
+# Post-install script -- guide section 8.14 postinst
+# Responsibilities:
+#   1. Create the application account as a fallback
+#   2. Prepare the data directory and the DSH profile (including plugins) on the data volume
+#   3. Generate host-specific runtime parameters (HOME / ports / trusted hosts / pageHosts)
+#   4. Deploy the nginx route (the platform does not do this for a manual dpkg install)
+#   5. Register and start the systemd services
+# No network access; only paths owned by this application are touched.
+# ============================================================
+set -e
+
+APPID="dsh"
+APPUSER="dsh-user"
+APP_DIR="/usr/local/${APPID}"
+SERVICE="${APPID}.service"
+
+if ! id -u "${APPUSER}" >/dev/null 2>&1; then
+    useradd --system --no-create-home --shell /usr/sbin/nologin "${APPUSER}" 2>/dev/null || true
+fi
+if ! getent group "${APPUSER}" >/dev/null 2>&1; then
+    groupadd --system "${APPUSER}" 2>/dev/null || true
+fi
+# TOS shared folders use a private ACL (system.tm_acl), so POSIX groups have no effect;
+# joining allusers only keeps this app consistent with the others -- grant-share.sh does the real authorization.
+if getent group allusers >/dev/null 2>&1; then
+    usermod -aG allusers "${APPUSER}" 2>/dev/null || true
+fi
+# The terminal must work: the account's login shell cannot be nologin (DSH opens a PTY through it, and nologin exits at once)
+usermod --shell /bin/bash "${APPUSER}" 2>/dev/null || true
+
+# ---- Data directory: prefer the data volume, fall back to the system disk ----
+DATA_ROOT=""
+for BASE in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+    if [ -d "${BASE}/@apps/${APPID}" ]; then
+        DATA_ROOT="${BASE}/@apps/${APPID}/data"
+        break
+    fi
+done
+if [ -z "${DATA_ROOT}" ] && [ -d /Volume1 ]; then
+    if mkdir -p "/Volume1/@apps/${APPID}/data" 2>/dev/null; then
+        DATA_ROOT="/Volume1/@apps/${APPID}/data"
+    fi
+fi
+if [ -z "${DATA_ROOT}" ]; then
+    DATA_ROOT="/var/lib/${APPID}"
+    echo "${APPID}: no usable data volume found, runtime data goes to ${DATA_ROOT}" >&2
+fi
+# workspace is the default workspace; HOME also points at DATA_ROOT as the starting point for the directory picker.
+mkdir -p "${DATA_ROOT}/dsh" "${DATA_ROOT}/workspace"
+
+# ---- Legacy account migration: 1.2.x and earlier used shdsh, 1.3.0 and later use dsh-user ----
+# Ownership is handed over only once: the data directory changes owner and the DSH shared folder changes ACL user.
+# The old account is kept (not deleted) to avoid collateral damage; it is cleaned up on purge.
+OLD_USER="shdsh"
+if [ "${APPUSER}" != "${OLD_USER}" ] && id -u "${OLD_USER}" >/dev/null 2>&1; then
+    if ! id -u "${APPUSER}" >/dev/null 2>&1; then
+        useradd --system --no-create-home --shell /bin/bash "${APPUSER}" 2>/dev/null || true
+    fi
+    chown -R "${APPUSER}:${APPUSER}" "${DATA_ROOT}" 2>/dev/null || true
+    if command -v tmacltool >/dev/null 2>&1; then
+        for VOL in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+            SHARE="${VOL}/DSH"
+            [ -d "${SHARE}" ] || continue
+            tmacltool del "${SHARE}" "user:${OLD_USER}:allow:rwxpdDaARWc--:fd--" >/dev/null 2>&1 || true
+            tmacltool add "${SHARE}" "user:${APPUSER}:allow:rwxpdDaARWc--:fd--" >/dev/null 2>&1 || true
+            chown -R "${APPUSER}:${APPUSER}" "${SHARE}" 2>/dev/null || true
+        done
+    fi
+    echo "${APPID}: runtime account migrated from ${OLD_USER} to ${APPUSER}"
+fi
+
+# ---- Per-install gate secret (S6 remediation) ----
+# nginx never ships a fixed X-Dsh-Gate value any more: the auth endpoint reads
+# this file and returns it in a response header, and the DSH plugin compares the
+# header against the same file. Generated once, preserved across upgrades.
+GATE_SECRET_FILE="${DATA_ROOT}/dsh/gate.secret"
+if [ ! -s "${GATE_SECRET_FILE}" ]; then
+    ( umask 077; head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${GATE_SECRET_FILE}" )
+fi
+chown "${APPUSER}:${APPUSER}" "${GATE_SECRET_FILE}" 2>/dev/null || true
+chmod 600 "${GATE_SECRET_FILE}" 2>/dev/null || true
+
+# ---- DSH profile seed (includes the tailnet-admin plugin) ----
+if [ ! -d "${DATA_ROOT}/dsh/profiles/web" ]; then
+    mkdir -p "${DATA_ROOT}/dsh/profiles"
+    cp -a "${APP_DIR}/profile-seed/profiles/web" "${DATA_ROOT}/dsh/profiles/web"
+fi
+
+# ---- Local addresses and ports ----
+# hostname -I returns several addresses and the reverse-proxy entry point is not necessarily the first; trust them all,
+# otherwise requests to the second address (for example 10.18.15.132) get a 403 on both the API and the WebSocket.
+IPS="$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | sort -u | tr '\n' ' ')"
+[ -n "${IPS}" ] || IPS="127.0.0.1"
+HOST="$(hostname 2>/dev/null || echo localhost)"
+
+# Web ports differ between TOS releases (8181/5443 or 8189/5449); read them from the nginx configuration instead of hardcoding.
+PORTS="$(grep -rhoE '^[[:space:]]*listen[[:space:]]+[0-9]+' /etc/nginx/nginx.conf 2>/dev/null \
+         | awk '{print $2}' | sort -u | tr '\n' ' ')"
+[ -n "${PORTS}" ] || PORTS="8181 5443 8189 5449"
+
+TRUSTED=""
+# DDNS / domain access: TOS writes enabled dynamic domains to ddns_records.json, and domain access must be trusted too,
+# otherwise a browser sending Origin: http://<domain>:<port> gets a 403 from DSH (the UI stays on "connecting").
+DOMAINS="$(grep -hoE '"hostName"[[:space:]]*:[[:space:]]*"[^"]+"' /etc/tos/config/ddns_records.json 2>/dev/null \
+           | sed -E 's/.*"hostName"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/' | sort -u | tr '\n' ' ')"
+# Let users append domains by hand to the previous dsh.env (DSH_TRUSTED_HOSTS_EXTRA="a.com b.com"); keep them on upgrade
+if [ -f "${APP_DIR}/${APPID}.env" ]; then
+    EXTRA="$(sed -n 's/^DSH_TRUSTED_HOSTS_EXTRA=["'\'']\{0,1\}\([^"'\'']*\)["'\'']\{0,1\}$/\1/p' "${APP_DIR}/${APPID}.env" | tr '\n' ' ')"
+    if [ -n "${EXTRA}" ]; then
+        DOMAINS="${DOMAINS} ${EXTRA}"
+    fi
+fi
+
+for base in ${IPS} "${HOST}" ${DOMAINS}; do
+    TRUSTED="${TRUSTED} ${base}"
+    for p in ${PORTS}; do
+        TRUSTED="${TRUSTED} ${base}:${p}"
+    done
+done
+
+# ---- DSH profile patch ----
+# Merge by id rather than overwriting the whole file: DSH itself writes settings into cordis.patch.yml
+# (for example welcomeNoticeVersion for the welcome notice). A full rewrite would wipe them.
+# This script only owns the blocks with the ids below; every other block is left as it is.
+#
+# 1) Disable the DeepSeek account sign-in chain: its startSignIn requires a browser-reachable loopback callback URL,
+#    but behind a reverse proxy the callback is the NAS LAN address, which the upstream protocol rejects outright
+#    (account: protocol). This app only offers API Key sign-in; if account sign-in is really needed, open an SSH
+#    tunnel to the NAS and use the loopback address.
+# 3) office-to-pdf: Office preview on Linux runs on the WASM engine, which only sees explicitly imported fonts;
+#    point it at the system font directory, otherwise non-Latin glyphs such as Chinese are lost entirely.
+PATCH_FILE="${DATA_ROOT}/dsh/profiles/web/cordis.patch.yml"
+PAGE_HOSTS="${PAGE_HOSTS}" python3 - "$PATCH_FILE" <<'PY'
+import os
+import re
+import sys
+
+path = sys.argv[1]
+page_hosts = [h.strip() for h in os.environ.get("PAGE_HOSTS", "").splitlines() if h.strip()]
+
+managed = {
+    "tailnet-admin", "deepseek-account", "llm-deepseek-account",
+    "ui-settings-account", "account-controller", "office-to-pdf",
+    # Voice input (experimental feature, off by default; enabled explicitly here; models are downloaded on demand)
+    "speech-to-text", "speech-to-text-sensevoice", "api-speech-to-text",
+    "ui-voice-input",
+    # UI language: Chinese by default; users can change it in the DSH settings
+    "locale",
+}
+
+text = ""
+if os.path.exists(path):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+
+# Split on top-level "- " (both "- id:" and "- insert:"), keeping blocks this script does not manage
+blocks, cur = [], []
+for line in text.splitlines(True):
+    if re.match(r"^- ", line) and cur:
+        blocks.append(cur)
+        cur = [line]
+    else:
+        cur.append(line)
+if cur:
+    blocks.append(cur)
+
+
+def managed_block(block):
+    first = block[0]
+    match = re.match(r"^- id:\s*([^\s]+)\s*$", first)
+    if match and match.group(1) in managed:
+        return True
+    # The four voice entries form one "- insert:" block; drop only the insert block that contains dsh-experimental,
+    # and keep any other insert written by the user.
+    if first.startswith("- insert:") and any("dsh-experimental" in line for line in block):
+        return True
+    return False
+
+
+kept = [b for b in blocks if not managed_block(b)]
+head = ""
+if kept:
+    head = "".join("".join(b) for b in kept).strip("\n") + "\n\n"
+
+hosts_yaml = ""
+managed_yaml = (
+    "# The blocks below are generated by postinst and replaced by id on upgrade; other blocks stay untouched.\n"
+    "- id: deepseek-account\n"
+    "  disabled: true\n"
+    "- id: llm-deepseek-account\n"
+    "  disabled: true\n"
+    "- id: ui-settings-account\n"
+    "  disabled: true\n"
+    "- id: account-controller\n"
+    "  disabled: true\n"
+    "\n"
+    "- id: office-to-pdf\n"
+    "  config:\n"
+    "    fontDirectories:\n"
+    "      - /usr/share/fonts\n"
+    "\n"
+    "# Voice input: phones record over HTTPS and the NAS transcribes locally with SenseVoice.\n"
+    "- insert:\n"
+    "    - id: speech-to-text\n"
+    "      name: '@deepseek-ai/dsh-experimental-speech-to-text'\n"
+    "      config:\n"
+    "        defaultProvider: sensevoice-local\n"
+    "    - id: speech-to-text-sensevoice\n"
+    "      name: '@deepseek-ai/dsh-experimental-speech-to-text-sensevoice'\n"
+    "      config:\n"
+    "        dataRoot: !!js dshHomePath('speech-to-text', 'sensevoice')\n"
+    "    - id: api-speech-to-text\n"
+    "      name: '@deepseek-ai/dsh-experimental-api-speech-to-text'\n"
+    "    - id: ui-voice-input\n"
+    "      name: '@deepseek-ai/dsh-experimental-client-ui-voice-input'\n"
+    "\n"
+    "# Language: no preference is written; DSH follows the browser/system language (zh -> Chinese, anything else -> English).\n"
+    "# After the user switches it in Settings -> General -> Language, DSH writes locale.preference itself.\n"
+)
+
+head = "\n".join(
+    line for line in head.splitlines()
+    if not (line.startswith("#") and "postinst" in line)
+).rstrip()
+if head:
+    head += "\n\n"
+
+with open(path, "w", encoding="utf-8") as fh:
+    fh.write(head + managed_yaml)
+PY
+
+# Older postinst versions may have written locale.preference = zh (forcing Chinese); migrate only once on upgrade,
+# so the default returns to "follow the system". A stamp records the migration, so later upgrades never touch the
+# language the user picked in the settings.
+LOCALE_STAMP="${DATA_ROOT}/dsh/profiles/web/.locale-auto"
+if [ ! -f "${LOCALE_STAMP}" ]; then
+    if grep -q 'preference: zh' "${DATA_ROOT}/dsh/profiles/web/cordis.patch.yml" 2>/dev/null; then
+        python3 - "${DATA_ROOT}/dsh/profiles/web/cordis.patch.yml" <<'PY'
+import io
+import re
+import sys
+
+path = sys.argv[1]
+text = io.open(path, encoding="utf-8").read()
+text = re.sub(r"(?ms)^- id: locale\n(?:  .*\n)*", "", text)
+io.open(path, "w", encoding="utf-8", newline="\n").write(text.rstrip() + "\n")
+PY
+    fi
+    touch "${LOCALE_STAMP}"
+    chown "${APPUSER}:${APPUSER}" "${LOCALE_STAMP}" 2>/dev/null || true
+fi
+
+# The seed profile may carry the build machine's cordis.patch.yaml (with its IP); remove it to avoid ambiguity
+rm -f "${DATA_ROOT}/dsh/profiles/web/cordis.patch.yaml"
+
+# ---- Voice assets: small files shipped in the package so the first download of tokens/VAD does not time out ----
+# The 239MB model.int8.onnx is still downloaded on demand by the DSH voice plugin (HF-Mirror as fallback).
+VOICE_ROOT="${DATA_ROOT}/dsh/speech-to-text/sensevoice/models"
+if [ -d "${APP_DIR}/voice-assets" ]; then
+    mkdir -p "${VOICE_ROOT}/sensevoice-onnx" "${VOICE_ROOT}/silero"
+    for pair in "tokens.txt:${VOICE_ROOT}/sensevoice-onnx/tokens.txt" \
+                "silero_vad.onnx:${VOICE_ROOT}/silero/silero_vad.onnx"; do
+        src="${APP_DIR}/voice-assets/${pair%%:*}"
+        dst="${pair#*:}"
+        if [ -f "${src}" ] && [ ! -f "${dst}" ]; then
+            cp -f "${src}" "${dst}"
+        fi
+    done
+    chown -R "${APPUSER}:${APPUSER}" "${DATA_ROOT}/dsh/speech-to-text" 2>/dev/null || true
+    chmod -R u+rwX,go+rX "${DATA_ROOT}/dsh/speech-to-text" 2>/dev/null || true
+fi
+
+# ---- Workspace: the app's own shared folder DSH (default) plus other shared folders (optional) ----
+# The platform-native mechanism is share_folders in config.ini: the app center creates the shared folder on install.
+# A manual dpkg install bypasses the platform, so create it once here with TOS's own ter_share_add (skip if present).
+# Only create and reuse; never delete a shared folder and never touch data in other directories.
+SHARE_NAME="DSH"
+SHARE_PATH=""
+for VOL in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+    if [ -d "${VOL}/${SHARE_NAME}" ]; then
+        SHARE_PATH="${VOL}/${SHARE_NAME}"
+        break
+    fi
+done
+if [ -z "${SHARE_PATH}" ] && command -v ter_share_add >/dev/null 2>&1; then
+    ter_share_add -name "${SHARE_NAME}" -owner "${APPUSER}" >/dev/null 2>&1 || true
+    for VOL in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+        if [ -d "${VOL}/${SHARE_NAME}" ]; then
+            SHARE_PATH="${VOL}/${SHARE_NAME}"
+            break
+        fi
+    done
+fi
+if [ -z "${SHARE_PATH}" ]; then
+    # Without ter_share_add (non-TOS environment) fall back to the app's own directory
+    SHARE_PATH="${DATA_ROOT}/workspace"
+fi
+mkdir -p "${SHARE_PATH}"
+chown -R "${APPUSER}:${APPUSER}" "${SHARE_PATH}" 2>/dev/null || true
+
+# ---- Web UI access authentication (audit item S4) ----
+# Access control is handled by the platform (TOS application access control); the app route no longer calls TOS APIs.
+# no app-specific Basic Auth password is generated any more. Upgrade removes the legacy htpasswd / password files.
+rm -f /etc/nginx/dsh.htpasswd "${SHARE_PATH}/dsh-webui-password.txt"
+
+# ---- Sidebar shell plugin (workspace grouping + blue running indicator) ----
+# The plugin does not replace native components: it only groups/collapses/drags the outer DOM layer, so a DSH
+# upgrade does not conflict as long as the slots still exist.
+PLUGIN_SRC="${APP_DIR}/plugin/shell-ui"
+PROFILE_DIR="${DATA_ROOT}/dsh/profiles/web"
+if [ -d "${PLUGIN_SRC}" ] && [ -f "${PROFILE_DIR}/package.json" ]; then
+    PLUGIN_DEST="${PROFILE_DIR}/node_modules/@surpasshither/dsh-shell-ui"
+    mkdir -p "${PLUGIN_DEST}/lib"
+    cp -f "${PLUGIN_SRC}/package.json" "${PLUGIN_DEST}/package.json"
+    cp -f "${PLUGIN_SRC}/cordis.patch.yml" "${PLUGIN_DEST}/cordis.patch.yml"
+    cp -f "${PLUGIN_SRC}/lib/index.js" "${PLUGIN_DEST}/lib/index.js"
+    cp -f "${PLUGIN_SRC}/lib/client.js" "${PLUGIN_DEST}/lib/client.js"
+    chown -R "${APPUSER}:${APPUSER}" "${PROFILE_DIR}/node_modules/@surpasshither" 2>/dev/null || true
+    python3 - "${PROFILE_DIR}/package.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = json.load(fh)
+data.setdefault("dependencies", {})["@surpasshither/dsh-shell-ui"] = "0.1.0"
+bundles = data.setdefault("dsh", {}).setdefault("profile", {}).setdefault("bundles", [])
+if "@surpasshither/dsh-shell-ui" not in bundles:
+    bundles.append("@surpasshither/dsh-shell-ui")
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, indent=2, ensure_ascii=False)
+PY
+    chown "${APPUSER}:${APPUSER}" "${PROFILE_DIR}/package.json" 2>/dev/null || true
+fi
+
+# ---- TOS gateway plugin (replaces the old tailnet-admin, audit item S4) ----
+# The old third-party plugin made isAuthenticated always true; this one only trusts the X-Dsh-Gate header that
+# nginx injects after TOS session authentication succeeds, and all other requests still go through DSH's native
+# token/cookie checks.
+GATE_SRC="${APP_DIR}/plugin/tos-gate"
+if [ -d "${GATE_SRC}" ] && [ -f "${PROFILE_DIR}/package.json" ]; then
+    GATE_DEST="${PROFILE_DIR}/node_modules/@surpasshither/dsh-tos-gate"
+    mkdir -p "${GATE_DEST}/lib"
+    cp -f "${GATE_SRC}/package.json" "${GATE_DEST}/package.json"
+    cp -f "${GATE_SRC}/cordis.patch.yml" "${GATE_DEST}/cordis.patch.yml"
+    cp -f "${GATE_SRC}/lib/index.js" "${GATE_DEST}/lib/index.js"
+    chown -R "${APPUSER}:${APPUSER}" "${PROFILE_DIR}/node_modules/@surpasshither" 2>/dev/null || true
+    python3 - "${PROFILE_DIR}/package.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    data = json.load(fh)
+data.setdefault("dependencies", {})["@surpasshither/dsh-tos-gate"] = "0.1.0"
+bundles = data.setdefault("dsh", {}).setdefault("profile", {}).setdefault("bundles", [])
+if "@surpasshither/dsh-tos-gate" not in bundles:
+    bundles.append("@surpasshither/dsh-tos-gate")
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, indent=2, ensure_ascii=False)
+PY
+    chown "${APPUSER}:${APPUSER}" "${PROFILE_DIR}/package.json" 2>/dev/null || true
+fi
+
+# Upgrade cleanup: remove the tailnet-admin that older versions installed (it disabled browser session checks), package and config alike
+for PROF in "${PROFILE_DIR}" "${APP_DIR}/profile-seed/profiles/web"; do
+    [ -d "${PROF}" ] || continue
+    rm -rf "${PROF}/node_modules/@he0119" 2>/dev/null || true
+    python3 - "${PROF}/package.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+except (FileNotFoundError, json.JSONDecodeError):
+    raise SystemExit(0)
+deps = data.get("dependencies") or {}
+changed = False
+if "@he0119/dsh-tailnet-admin" in deps:
+    deps.pop("@he0119/dsh-tailnet-admin")
+    data["dependencies"] = deps
+    changed = True
+bundles = data.get("dsh", {}).get("profile", {}).get("bundles") or []
+if "@he0119/dsh-tailnet-admin" in bundles:
+    bundles.remove("@he0119/dsh-tailnet-admin")
+    changed = True
+if changed:
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, indent=2, ensure_ascii=False)
+PY
+    chown "${APPUSER}:${APPUSER}" "${PROF}/package.json" 2>/dev/null || true
+done
+
+# The picker starts at HOME: expose the default workspace and each data volume as obvious entry points
+HOME_DIR="${DATA_ROOT}/home"
+mkdir -p "${HOME_DIR}"
+ln -sfn "${SHARE_PATH}" "${HOME_DIR}/workspace"
+for VOL in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+    [ -d "${VOL}" ] || continue
+    ln -sfn "${VOL}" "${HOME_DIR}/$(basename "${VOL}")"
+done
+chown -R "${APPUSER}:${APPUSER}" "${HOME_DIR}" 2>/dev/null || true
+
+# Other shared folders are not authorized by default: TOS private ACLs ignore POSIX groups.
+# When access is needed, the user grants it to dsh-user in the TOS UI, or an administrator runs bin/grant-share.sh.
+
+# ---- Runtime parameters ----
+# HOME must already exist and be writable: DSH's "choose workspace directory" starts at HOME,
+# and a missing start point fails with cannot list ENOENT, making the whole picker unusable.
+ORIGINS=""
+for p in ${PORTS}; do ORIGINS="${ORIGINS} https://127.0.0.1:${p}"; done
+cat > "${APP_DIR}/${APPID}.env" <<ENV
+HOME=${HOME_DIR}
+DSH_HOME=${DATA_ROOT}/dsh
+DSH_PORT=18142
+DSH_TRUSTED_HOSTS="$(echo ${TRUSTED} | sed 's/^ *//')"
+DSH_TRUSTED_HOSTS_EXTRA="${EXTRA:-}"
+TOS_ORIGINS="$(echo ${ORIGINS} | sed 's/^ *//')"
+ENV
+chmod 640 "${APP_DIR}/${APPID}.env"
+
+# ---- nginx route ----
+# The app center normally deploys nginx/<appid>.conf into /etc/nginx/conf.d, but a manual dpkg install does not,
+# which shows up as the service running while /dsh/ returns 404. Add it here, idempotently; do not reload on an invalid config.
+NGINX_CONF_DIR="/etc/nginx/conf.d"
+if [ -d "${NGINX_CONF_DIR}" ] && [ -f "${APP_DIR}/nginx/${APPID}.conf" ]; then
+    cp -f "${APP_DIR}/nginx/${APPID}.conf" "${NGINX_CONF_DIR}/${APPID}.conf"
+    # The package ships a placeholder; the real per-install secret only exists on
+    # this machine. Substitute it in the deployed copy (never in the package).
+    if [ -s "${GATE_SECRET_FILE}" ]; then
+        sed -i "s|__DSH_GATE_SECRET__|$(cat "${GATE_SECRET_FILE}")|g" "${NGINX_CONF_DIR}/${APPID}.conf"
+    fi
+    if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+        systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null || true
+        echo "${APPID}: nginx route deployed (/etc/nginx/conf.d/${APPID}.conf)"
+    else
+        echo "${APPID}: nginx configuration check failed, not reloaded; please check ${NGINX_CONF_DIR}/${APPID}.conf" >&2
+    fi
+fi
+
+chmod 755 "${APP_DIR}/bin/node" "${APP_DIR}/bin/start-dsh.sh" "${APP_DIR}/bin/grant-share.sh" 2>/dev/null || true
+chown -R "${APPUSER}:${APPUSER}" "${DATA_ROOT}" 2>/dev/null || true
+
+# ---- RTL support (ar / he) ----
+# Upstream DSH only ships en/zh UI languages and has no RTL implementation. This injects a small script before
+# </head> in the frontend template index.html: when the browser language is Arabic/Hebrew (including Persian, Urdu)
+# it marks <html> as dir="rtl" and fixes form direction. Only this package's own frontend template is modified,
+# upstream logic is untouched, and it runs idempotently on every install (skipped once injected).
+IDX="${APP_DIR}/app/node_modules/@deepseek-ai/dsh-web-frontend/dist/index.html"
+if [ -f "${IDX}" ] && ! grep -q 'dsh-rtl' "${IDX}"; then
+    python3 - "${IDX}" <<'PY'
+import io
+import sys
+
+path = sys.argv[1]
+script = (
+    '<script id="dsh-rtl">(function(){'
+    'var l=(navigator.language||"").toLowerCase();'
+    'if(!/^(ar|he|fa|ur)(-|$)/.test(l))return;'
+    'var h=document.documentElement;h.setAttribute("dir","rtl");'
+    'h.setAttribute("lang",l.split("-")[0]);'
+    'var s=document.createElement("style");'
+    's.textContent="body{direction:rtl}input,textarea,[contenteditable]{direction:rtl}";'
+    'document.head.appendChild(s);})();</script>'
+)
+text = io.open(path, encoding="utf-8").read()
+if "</head>" in text and "dsh-rtl" not in text:
+    text = text.replace("</head>", script + "</head>", 1)
+    io.open(path, "w", encoding="utf-8", newline="\n").write(text)
+PY
+fi
+
+if [ -n "${2:-}" ]; then
+    NEWVER=$(dpkg-query -W -f='${Version}' "${APPID}" 2>/dev/null || true)
+    echo "${APPID}: upgrading from ${2} to ${NEWVER:-unknown}"
+fi
+
+# A manual dpkg install does not install the units for you, so drop them into the systemd directory here (idempotent)
+# TOS's install is a custom command without -m; use cp + chmod instead.
+if [ -f "${APP_DIR}/init.d/${SERVICE}" ]; then
+    cp -f "${APP_DIR}/init.d/${SERVICE}" "/etc/systemd/system/${SERVICE}"
+    chmod 644 "/etc/systemd/system/${SERVICE}"
+fi
+
+USAGE_SERVICE="dsh-usage.service"
+if [ -f "${APP_DIR}/init.d/${USAGE_SERVICE}" ]; then
+    cp -f "${APP_DIR}/init.d/${USAGE_SERVICE}" "/etc/systemd/system/${USAGE_SERVICE}"
+    chmod 644 "/etc/systemd/system/${USAGE_SERVICE}"
+fi
+
+
+# ---- Upgrade cleanup: remove old files the new package no longer ships ----
+# Early versions bundled Windows prebuilds (node-pty/conpty), musl variants and a duplicate zod together;
+# those files are not tracked by dpkg, so upgrades must delete them explicitly or they linger on old machines.
+NM="${APP_DIR}/app/node_modules"
+if [ -d "${NM}" ]; then
+    rm -rf "${NM}/node-pty/prebuilds/win32-x64" \
+           "${NM}/node-pty/prebuilds/win32-arm64" \
+           "${NM}/node-pty/prebuilds/darwin-x64" \
+           "${NM}/node-pty/prebuilds/darwin-arm64" \
+           "${NM}/node-pty/third_party" 2>/dev/null || true
+    for d in "${NM}"/@deepseek-ai/node-addon-system-linux-*/bin/musl; do
+        [ -d "${d}" ] && rm -rf "${d}" 2>/dev/null || true
+    done
+    rm -rf "${NM}/@anthropic-ai/sdk/bin" \
+           "${NM}/js-yaml/bin" \
+           "${NM}/semver/bin" \
+           "${NM}/which/bin" 2>/dev/null || true
+    if [ -f "${NM}/zod/package.json" ]; then
+        find "${NM}" -path '*/node_modules/zod/package.json' 2>/dev/null | while IFS= read -r zf; do
+            zd=$(dirname "${zf}")
+            [ "${zd}" = "${NM}/zod" ] && continue
+            rm -rf "${zd}"
+            mkdir -p "${zd}"
+            cp -a "${NM}/zod/." "${zd}/"
+        done
+    fi
+fi
+
+systemctl daemon-reload 2>/dev/null || true
+systemctl enable "${SERVICE}" 2>/dev/null || true
+systemctl restart "${SERVICE}" 2>/dev/null || true
+if [ -f "/etc/systemd/system/${USAGE_SERVICE}" ]; then
+    systemctl enable "${USAGE_SERVICE}" 2>/dev/null || true
+    systemctl restart "${USAGE_SERVICE}" 2>/dev/null || true
+fi
+
+cat <<EOF2
+${APPID}: installed
+  Data directory     : ${DATA_ROOT} (kept on uninstall)
+  Optional component : Office preview (docx/pptx) is not bundled; to enable it run
+                       sudo ${APP_DIR}/bin/install-office-preview.sh
+  Uninstall          : dpkg -r / dpkg -P keep your data; to delete it run
+                       sudo SH_DSH_PURGE_DATA=1 dpkg --purge ${APPID}
+EOF2
+
+exit 0

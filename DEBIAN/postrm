@@ -1,0 +1,83 @@
+#!/bin/bash
+# ============================================================
+# Post-remove script -- guide section 8.14 postrm
+#
+# ⚠️ dpkg also calls the **old** package's postrm on an upgrade, with the argument `upgrade`.
+# So the argument must be checked first: only clean up for remove / purge, otherwise an upgrade
+# deletes the /etc/systemd/system/<appid>.service symlink -- the service is "not found" afterwards,
+# and postinst's enable is a no-op for an already linked unit, so it cannot be recovered.
+#
+# Data safety (explicit user requirement):
+#   · remove / purge **do not delete** user data by default (sessions, workspaces, memory, API keys)
+#   · data is deleted only when SH_DSH_PURGE_DATA=1 is set explicitly, and the list is printed first
+#   · data volume paths are never touched
+# ============================================================
+set -e
+
+APPID="dsh"
+APPUSER="dsh-user"
+
+case "${1:-remove}" in
+    remove|purge) ;;
+    *) exit 0 ;;
+esac
+
+systemctl stop dsh-usage 2>/dev/null || true
+systemctl disable dsh-usage 2>/dev/null || true
+rm -f "/etc/systemd/system/dsh-usage.service" 2>/dev/null || true
+rm -f "/etc/systemd/system/${APPID}.service" 2>/dev/null || true
+rm -f "/var/api/${APPID}.sock" 2>/dev/null || true
+# Remove the nginx route deployed by this app (postinst places it; the platform may have placed the same path)
+rm -f "/etc/nginx/conf.d/${APPID}.conf" 2>/dev/null || true
+if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+    systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null || true
+fi
+systemctl daemon-reload 2>/dev/null || true
+
+# Collect any user data directories that exist
+DATA_DIRS=""
+for BASE in /Volume1 /Volume2 /Volume3 /Volume4 /Volume5 /Volume6; do
+    if [ -d "${BASE}/@apps/${APPID}/data" ]; then
+        DATA_DIRS="${DATA_DIRS} ${BASE}/@apps/${APPID}/data"
+    fi
+done
+[ -d "/var/lib/${APPID}" ] && DATA_DIRS="${DATA_DIRS} /var/lib/${APPID}"
+
+if [ "${1:-remove}" = "purge" ]; then
+    cat <<EOF
+
+================================================================
+⚠️  DSH for TOS is being purged (complete removal)
+
+The following locations hold your data (sessions, workspaces, long-term memory, API keys):
+$(for d in $DATA_DIRS; do echo "    $d"; done)
+$([ -z "$DATA_DIRS" ] && echo "    (no data directory found)")
+
+**They are not deleted by default.** After the app is uninstalled these files can still be
+inspected or backed up by hand. To delete them permanently, run again:
+
+    sudo SH_DSH_PURGE_DATA=1 dpkg --purge ${APPID}
+
+================================================================
+EOF
+
+    if [ "${SH_DSH_PURGE_DATA:-0}" = "1" ]; then
+        echo "SH_DSH_PURGE_DATA=1 set, deleting user data..."
+        for d in $DATA_DIRS; do
+            rm -rf "$d" 2>/dev/null || true
+            echo "  removed $d"
+        done
+        if id -u "shdsh" >/dev/null 2>&1; then
+            userdel "shdsh" 2>/dev/null || true
+        fi
+        if id -u "${APPUSER}" >/dev/null 2>&1; then
+            userdel "${APPUSER}" 2>/dev/null || true
+        fi
+        echo "User data deleted."
+    else
+        echo "User data kept (SH_DSH_PURGE_DATA=1 was not set)."
+        echo "To remove the accounts as well, add that variable to the command above."
+    fi
+fi
+
+exit 0

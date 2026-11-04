@@ -1,0 +1,11 @@
+#!/bin/bash
+# Before uninstall/upgrade: only stop the service, **do not disable** it.
+#
+# Why disable must be avoided: the TOS platform units are symlinks into /etc/systemd/system, and
+# `systemctl disable` deletes that symlink -- re-enabling it from postinst on upgrade does not bring it
+# back (enable is a no-op for an already linked unit), so the service ends up "not found" after the upgrade.
+# Lifecycle and start/stop policy are managed by the app center; this script only stops the service.
+set -e
+APPID="dsh"
+systemctl stop "${APPID}.service" 2>/dev/null || true
+exit 0

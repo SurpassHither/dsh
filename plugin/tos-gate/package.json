@@ -1,0 +1,25 @@
+{
+  "name": "@surpasshither/dsh-tos-gate",
+  "version": "0.1.0",
+  "description": "TOS reverse-proxy gate: pages are treated as local, and the browser session check is bypassed only for requests that carry the nginx-injected X-Dsh-Gate header; all other requests keep DSH's native token/cookie check.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}

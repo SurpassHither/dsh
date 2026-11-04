@@ -1,0 +1,132 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "dsh-1.7.5",
+  "documentNamespace": "https://github.com/SurpassHither/dsh/sbom/1.7.5",
+  "creationInfo": {
+    "created": "2026-10-28T00:00:00Z",
+    "creators": [
+      "Tool: gen.py (workspace/_generator)"
+    ],
+    "licenseListVersion": "3.22"
+  },
+  "packages": [
+    {
+      "name": "dsh",
+      "SPDXID": "SPDXRef-Package-dsh",
+      "versionInfo": "1.7.5",
+      "downloadLocation": "https://github.com/SurpassHither/dsh",
+      "filesAnalyzed": true,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2026 SurpassHither",
+      "supplier": "Person: SurpassHither",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/SurpassHither/dsh@1.7.5"
+        }
+      ]
+    },
+    {
+      "name": "DeepSeek Harness",
+      "SPDXID": "SPDXRef-Package-dsh",
+      "versionInfo": "0.2.1-rc.2",
+      "downloadLocation": "https://github.com/deepseek-ai/deepseek-harness",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2026 DeepSeek",
+      "supplier": "Organization: DeepSeek",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40deepseek-ai/dsh@0.2.1-rc.2"
+        }
+      ]
+    },
+    {
+      "name": "sherpa-onnx",
+      "SPDXID": "SPDXRef-Package-sherpa-onnx",
+      "versionInfo": "1.13.8",
+      "downloadLocation": "https://github.com/k2-fsa/sherpa-onnx",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) 2023-2026 The next-gen Kaldi team",
+      "supplier": "Organization: next-gen Kaldi",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/sherpa-onnx-linux-x64@1.13.8"
+        }
+      ]
+    },
+    {
+      "name": "SenseVoiceSmall",
+      "SPDXID": "SPDXRef-Package-sensevoice-small",
+      "downloadLocation": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) 2024 FunAudioLLM",
+      "supplier": "Organization: FunAudioLLM"
+    },
+    {
+      "name": "Silero VAD",
+      "SPDXID": "SPDXRef-Package-silero-vad",
+      "downloadLocation": "https://github.com/snakers4/silero-vad",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2021 Silero Team",
+      "supplier": "Organization: Silero"
+    },
+    {
+      "name": "dsh-tailnet-admin",
+      "SPDXID": "SPDXRef-Package-tailnet-admin",
+      "downloadLocation": "https://github.com/he0119/dsh-tailnet-admin",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) he0119",
+      "supplier": "Person: he0119"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-Package-dsh",
+      "relationshipType": "DESCRIBES"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-dsh",
+      "relatedSpdxElement": "SPDXRef-Package-dsh",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-dsh",
+      "relatedSpdxElement": "SPDXRef-Package-sherpa-onnx",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-dsh",
+      "relatedSpdxElement": "SPDXRef-Package-sensevoice-small",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-dsh",
+      "relatedSpdxElement": "SPDXRef-Package-silero-vad",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-dsh",
+      "relatedSpdxElement": "SPDXRef-Package-tailnet-admin",
+      "relationshipType": "CONTAINS"
+    }
+  ]
+}

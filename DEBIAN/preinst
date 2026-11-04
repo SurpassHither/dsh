@@ -1,0 +1,8 @@
+#!/bin/bash
+# Before install: make sure no app with the same name is running (idempotent, non-blocking)
+set -e
+APPID="dsh"
+if systemctl is-active --quiet "${APPID}.service" 2>/dev/null; then
+    systemctl stop "${APPID}.service" 2>/dev/null || true
+fi
+exit 0

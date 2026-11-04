@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Applies to**: 1.5.0 · Last updated: 2026-10-27
+**Applies to**: 1.7.5 · Last updated: 2026-10-27
 
 **DSH for TOS** (app ID: `dsh`)
 

@@ -1,0 +1,26 @@
+# Build artifacts (produced by CI, attached to Release, not committed)
+build/
+*.deb
+*.sha256
+webui.bz2
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local debugging data
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# payload is assembled on the build host, not committed
+payload/

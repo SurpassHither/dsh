@@ -12,10 +12,10 @@
 
 | Item | Value |
 |---|---|
-| Version | 1.5.0 |
+| Version | 1.7.5 |
 | App ID | `dsh` |
 
-This is version **1.5.0**.
+This is version **1.7.5**.
 
 DSH's web UI on TOS: after installation, open it from the TOS desktop and you get the
 full interface (sessions, workspaces, plugins, settings). A fixed Node.js runtime is
@@ -32,7 +32,7 @@ uploaded.
 - Bundled Node.js (LTS); no runtime needs to be preinstalled on TOS
 - Sessions, workspaces and long-term memory live on the data volume and survive upgrades
 - Dedicated non-root account + systemd sandbox; reachable only through the TOS web route, no extra ports
-- **Local voice input**: microphone → on-device SenseVoice → session draft; audio is never stored or uploaded
+- **No bundled voice model**: this build is text-only; the optional voice input runtime is not included, which keeps the package smaller
 - **English UI by default**: switch languages in DSH Settings
 - **Mobile app**: planned; the sidebar button currently opens a local "coming soon" page
 
@@ -55,12 +55,10 @@ uploaded.
 |---|---|---|
 | Data volume read/write (`/Volume*/@apps/dsh/data`) | Store sessions, workspaces and long-term memory | The only default writable location |
 | User-granted working directories | The agent reads/writes the project folders you pick | Chosen in the UI; nothing is touched otherwise |
-| Network (outbound) | Call the model API you configure; download the voice model on first use | Only your key and endpoint; no telemetry |
-| Listen on 127.0.0.1:18142 | Used by TOS nginx / the future mobile app reverse proxy | Loopback only |
-| Voice model cache (`data/dsh/speech-to-text/`) | Local SenseVoice recognition | About 240 MB; no recordings |
+| Network (outbound) | Call the model API you configure | Only your key and endpoint; no telemetry |
+| Listen on 127.0.0.1:18142 | Used by the bundled nginx reverse proxy | Loopback only |
 
-Not requested: root, privileged mode, host networking, kernel modules. The voice model
-uses roughly 1 GB of memory when loaded; 4 GB of free NAS memory is recommended.
+Not requested: root, privileged mode, host networking, kernel modules.
 
 ## Data safety
 
@@ -75,11 +73,10 @@ untouched.
 | Path (relative to `/Volume*/@apps/dsh/data/` unless noted) | Purpose | Format | Created | Growth / rotation | Lifecycle |
 |---|---|---|---|---|---|
 | `dsh/profiles/web/` | DSH profile: plugin list and patch config | YAML/JSON | Seeded by postinst on first install | < 1 MB | Persistent; preserved on upgrade |
-| `dsh/profiles/web/node_modules/` | Plugin packages (tailnet-admin and the bundled shell UI) | Directory | Seeded on first install | < 5 MB | Persistent |
+| `dsh/profiles/web/node_modules/` | Plugin packages (TOS gate and the bundled shell UI) | Directory | Seeded on first install | < 5 MB | Persistent |
 | `dsh/sessions/` | Session records and message history | JSONL | On each new session | Grows with use; delete from the UI | Persistent; kept on uninstall |
 | `dsh/.credentials.yaml` | Browser session signing secrets | YAML | First start | < 64 KB | Persistent; mode 600 |
 | `dsh/workspaces/` | Workspace index and metadata | JSON | First workspace added | < 10 MB | Persistent |
-| `dsh/speech-to-text/sensevoice/models/` | SenseVoice model, tokens and VAD | ONNX/TXT | First voice use / small files seeded at install | About 240 MB | Persistent; kept when the plugin is disabled |
 | `workspace/` | Default working directory (can be changed to a shared folder) | Directory | First install | Depends on your files | Persistent |
 | `/var/lib/dsh/` (system-disk fallback, only when no data volume exists) | Same as above, fallback location | Directory | When no data volume is available | As above | Kept on uninstall, removed on purge |
 
@@ -120,7 +117,7 @@ and is kept on uninstall, removed on purge.
 ## Install
 
 ```bash
-dpkg -i dsh_1.5.0_x86_64.deb
+dpkg -i dsh_1.5.1_x86_64.deb
 systemctl status dsh
 ```
 
@@ -145,15 +142,16 @@ not been security-audited. This package reduces the risk in three ways:
 3. The default working directory is on the data volume; other shared folders are only
    accessed after you explicitly select them
 
-⚠️ **The most important boundary**: to make the reverse-proxied page work, this package
-disables DSH's **browser session check** (token→cookie) via
-`@he0119/dsh-tailnet-admin`. Host/Origin checks remain enabled. **Anyone who can open
-`/dsh/` can control this machine.** The TOS `/dsh/` route itself performs no login
-(verified: unauthenticated requests return 200).
+⚠️ **Access uses the TOS login session** on the `/dsh/` and `/dsh/ui/` routes, the same way
+Photos and Surveillance do. The package wires nginx to the platform endpoint
+`/internal/authz`; unauthenticated requests are redirected to `/tos/` to sign in.
+There is no separate app password to manage.
 
-**A companion mobile app with local login + TOTP is planned.** Until it ships, access
-`/dsh/` only from the NAS loopback or an SSH tunnel, and never map port 5449 or 18142
-directly to the internet.
+The app still runs as a dedicated non-root account with a systemd sandbox, and DSH's own
+Host/Origin checks stay enabled.
+
+**A companion mobile app with local login + TOTP is planned.** Until it ships, do not map
+port 5449 or 18142 directly to the internet; keep the NAS behind your router/firewall.
 
 ## Troubleshooting
 
@@ -192,13 +190,7 @@ sudo /usr/local/dsh/bin/install-office-preview.sh --remove # remove
 
 ## Known limitations
 
-- `x86_64` only; Office preview must be installed on demand (see above)
-- The voice model (239 MB) is downloaded on first use, with a Hugging Face mirror
-  fallback. `tokens.txt` / `silero_vad.onnx` ship with the package. For a fully offline
-  setup, place `model.int8.onnx` (239,233,841 bytes, SHA-256
-  `c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51`) under
-  `data/dsh/speech-to-text/sensevoice/models/sensevoice-onnx/`
-- The voice model uses roughly 1 GB of memory; disable the voice plugin on low-memory NAS
+- Prebuilt for `x86_64` and `aarch64`; Office preview must be installed on demand (see above)
 - DSH is a developer preview and upstream may make breaking changes; watch upstream
   releases when upgrading this app
 - You must provide your own model API key (DeepSeek or a compatible endpoint)
@@ -206,8 +198,8 @@ sudo /usr/local/dsh/bin/install-office-preview.sh --remove # remove
   browser-reachable loopback callback, which the upstream protocol rejects when the page
   is opened through the NAS address. This build keeps the sign-in entry disabled and
   supports API keys only
-- **`/dsh/` is not a login page**: it is a reverse-proxy route with no user
-  authentication. Use an SSH tunnel, or wait for the companion mobile app
+- **Workspace categories are opt-in**: the sidebar grouping feature is off by default.
+  Enable it under **Settings → General → Workspace categories**
 
 ## License
 

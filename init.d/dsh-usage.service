@@ -1,0 +1,26 @@
+[Unit]
+Description=DSH for TOS usage and balance
+After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+User=dsh-user
+Group=dsh-user
+EnvironmentFile=-/usr/local/dsh/dsh.env
+ExecStart=/usr/bin/python3 /usr/local/dsh/bin/usage-service.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

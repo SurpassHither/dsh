@@ -1,0 +1,4 @@
+# dsh-tos-gate -- mount the gateway plugin into the web profile config tree
+- insert:
+    - id: tos-gate
+      name: '@surpasshither/dsh-tos-gate'

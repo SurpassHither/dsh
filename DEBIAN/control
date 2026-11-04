@@ -1,0 +1,11 @@
+Package: dsh
+Version: 1.7.5
+Architecture: amd64
+Section: utils
+Priority: optional
+Maintainer: SurpassHither <surpasshither@outlook.com>
+Depends: systemd, libc6 (>= 2.35), python3
+Description: DSH for TOS
+ An unofficial TerraMaster packaging of DeepSeek Harness (DSH), the open-source
+ coding-agent web UI published by DeepSeek under the MIT license. A fixed Node.js
+ runtime is bundled so the app works offline after installation.

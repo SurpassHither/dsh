@@ -1,0 +1,4 @@
+# dsh-shell-ui -- mount the plugin into the web profile config tree
+- insert:
+    - id: shell-ui
+      name: '@surpasshither/dsh-shell-ui'

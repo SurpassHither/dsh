@@ -1,0 +1,140 @@
+{
+  "_comment": "Every executable-bit file and every native binary shipped in the package. Paths are relative to /usr/local/dsh/. Generated from the payload; BINARY-DECLARATION.md is the human-readable version.",
+  "package": "dsh",
+  "architecture": "amd64",
+  "native_binaries": [
+    {
+      "path": "bin/node",
+      "sha256": "e32e2d16081cf644f88392934288086e7662529d0d43277c34f7aad2207cfafb",
+      "kind": "executable",
+      "origin": "Node.js official Linux x64 tarball",
+      "source_url": "https://nodejs.org/dist/v24.22.1/node-v24.22.1-linux-x64.tar.xz",
+      "version": "24.22.1",
+      "license": "MIT",
+      "purpose": "JavaScript runtime",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@vscode/ripgrep-linux-x64/bin/rg",
+      "sha256": "193906679498de4d939345b937fa24e0e69a03c244bd70c859f5e41232713f21",
+      "kind": "executable",
+      "origin": "npm package @vscode/ripgrep-linux-x64",
+      "source_url": "https://registry.npmjs.org/@vscode/ripgrep-linux-x64",
+      "version": "1.18.0",
+      "license": "MIT",
+      "purpose": "File search used by the agent",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@deepseek-ai/node-addon-system-linux-x64/bin/landlock-run",
+      "sha256": "a752bc72f111fcc573c3e61fb90fa544541dac0ca498d2e279e1630d7c659b31",
+      "kind": "executable",
+      "origin": "npm package @deepseek-ai/node-addon-system-linux-x64",
+      "source_url": "https://registry.npmjs.org/@deepseek-ai/node-addon-system-linux-x64",
+      "version": "0.1.2",
+      "license": "BSD-3-Clause",
+      "purpose": "Landlock sandbox helper",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@deepseek-ai/node-addon-system-linux-x64/bin/glibc/system.node",
+      "sha256": "54a9c25c05186c17520f6b7a5ced5f005752c08044c3eb76524cd517287600bc",
+      "kind": "shared-library",
+      "origin": "npm package @deepseek-ai/node-addon-system-linux-x64",
+      "source_url": "https://registry.npmjs.org/@deepseek-ai/node-addon-system-linux-x64",
+      "version": "0.1.2",
+      "license": "BSD-3-Clause",
+      "purpose": "Native system addon (glibc)",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@img/sharp-linux-x64/lib/sharp-linux-x64-0.35.5.node",
+      "sha256": "cf896cc1b7f3ae9c3e8eb3d7b2b198b8de2824ff7d0681d684bab5a825def335",
+      "kind": "shared-library",
+      "origin": "npm package @img/sharp-linux-x64 (sharp)",
+      "source_url": "https://registry.npmjs.org/@img/sharp-linux-x64",
+      "version": "0.35.5",
+      "license": "Apache-2.0",
+      "purpose": "Image decoding and resizing",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.8.18.7",
+      "sha256": "4aa73553408c3964071728f4a231a8e86918e39bc49f1fbae75355f7ea933ea9",
+      "kind": "shared-library",
+      "origin": "npm package @img/sharp-libvips-linux-x64 (libvips)",
+      "source_url": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64",
+      "version": "1.3.4",
+      "license": "LGPL-3.0-or-later",
+      "purpose": "Image processing backend for sharp",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/@koromix/koffi-linux-x64/linux_x64/koffi.node",
+      "sha256": "df687b8c68598c3ee83d06dcbc1d72fca032475e62b6108c4badfb5e43a3e7ff",
+      "kind": "shared-library",
+      "origin": "npm package @koromix/koffi-linux-x64",
+      "source_url": "https://registry.npmjs.org/@koromix/koffi-linux-x64",
+      "version": "3.1.1",
+      "license": "MIT",
+      "purpose": "FFI bridge used by native helpers",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/node-addon-require-builtin-linux-x64-gnu/prebuilt/linux-x64-gnu-napi-v9.node",
+      "sha256": "40c34d27d8339e246a8f7415a06152935496cdc06555ea8fce0e052011acc70f",
+      "kind": "shared-library",
+      "origin": "npm package node-addon-require-builtin-linux-x64-gnu",
+      "source_url": "https://registry.npmjs.org/node-addon-require-builtin-linux-x64-gnu",
+      "version": "0.1.9",
+      "license": "MIT",
+      "purpose": "Native helper for loading builtin modules",
+      "arch": "x86_64"
+    },
+    {
+      "path": "app/node_modules/node-pty/prebuilds/linux-x64/pty.node",
+      "sha256": "123792d8f22f36d519b21dfb6f4b716f9b18b9e579085ea2840d0773d88d35fd",
+      "kind": "shared-library",
+      "origin": "npm package node-pty",
+      "source_url": "https://registry.npmjs.org/node-pty",
+      "version": "1.2.0-beta.15",
+      "license": "MIT",
+      "purpose": "Pseudo-terminal for the built-in terminal",
+      "arch": "x86_64"
+    }
+  ],
+  "package_scripts": [
+    {
+      "path": "bin/start-dsh.sh",
+      "sha256": "f074a43b1e79ae7b6521970a79ad96f9180b02f05722eca1356318b34d139b6a",
+      "kind": "script",
+      "origin": "first-party, this repository (scripts/start-dsh.sh)",
+      "license": "MIT",
+      "purpose": "Service entry point"
+    },
+    {
+      "path": "bin/grant-share.sh",
+      "sha256": "bc22cc84a064f2834146c32384fb566d0888c18ca3b2be9a741afc8a8031e1c7",
+      "kind": "script",
+      "origin": "first-party, this repository (scripts/grant-share.sh)",
+      "license": "MIT",
+      "purpose": "Grant a shared folder to the app user"
+    },
+    {
+      "path": "bin/install-office-preview.sh",
+      "sha256": "42718649d2154266c4b9e237201cdcecb484cffd4f805f44a3a599590979c18e",
+      "kind": "script",
+      "origin": "first-party, this repository (scripts/install-office-preview.sh)",
+      "license": "MIT",
+      "purpose": "Optional Office preview downloader"
+    },
+    {
+      "path": "bin/usage-service.py",
+      "sha256": "862ba215599917809e41fe387428eba3417d3bf40da9b51a2df154a00ac65b17",
+      "kind": "script",
+      "origin": "first-party, this repository (scripts/usage-service.py)",
+      "license": "MIT",
+      "purpose": "Usage and balance sidecar (Python standard library only)"
+    }
+  ]
+}
