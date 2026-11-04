@@ -4,7 +4,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS 是 DeepSeek 开源项目 DeepSeek Harness（DSH）的非官方 TerraMaster 封装。DSH 由 DeepSeek 开发并以 MIT 许可证开源，版权归 DeepSeek 所有。本应用不改 DSH 源码，将原始网页界面与固定版本 Node.js 一起封装进 TOS：安装后离线可用，会话与工作区保存在数据卷，服务以非特权账户运行、只经 TOS 网页路由访问。填入自己的模型 API Key 即可开始。非 DeepSeek 官方产品，与 DeepSeek 无隶属关系。"
 release_note = "本版修复 1.7.3 审核问题：改用每应用鉴权端点（官方 TOS API，不再依赖内部套接字），网关头改为每次安装随机密钥，移除 undici.bak，并为每个内置二进制补充 SHA-256 与来源说明。"
-important = "以专用非 root 账户运行。会话与工作区保存在数据卷，卸载时保留、purge 时删除。界面只经 TOS 网页路由访问，服务仅监听本机回环。AI 智能体可在你授权的工作目录内执行命令，开启写入权限前请自行确认。 若要用 TOS 共享文件夹作工作区，需在 TOS 控制面板给应用用户 dsh-user 授读写权限；列表里没有该用户时，执行 sudo /usr/local/dsh/bin/grant-share.sh <路径> rw。 卸载会保留数据目录 /Volume1/@apps/dsh/data 与 dsh-user 账户；如需一并删除，请执行 sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh。"
+important = "以非 root 的 dsh-user 账户运行。数据位于 /Volume1/@apps/dsh/data，卸载后保留，账户也保留。彻底删除请执行：sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh。"
 
 [zh-hk]
 name = "DSH（TOS 版）"
@@ -12,7 +12,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS 是 DeepSeek 開源專案 DeepSeek Harness（DSH）的非官方 TerraMaster 封裝。DSH 由 DeepSeek 開發並以 MIT 授權開源，版權歸 DeepSeek 所有。本應用不改 DSH 原始碼，將原始網頁介面與固定版本 Node.js 一併封裝進 TOS：安裝後離線可用，工作階段與工作區保存在資料卷，服務以非特權帳戶執行、只經 TOS 網頁路由存取。填入自己的模型 API Key 即可開始。非 DeepSeek 官方產品，與 DeepSeek 無隸屬關係。"
 release_note = "本版修正 1.7.3 審核問題：改用每應用鑑權端點（官方 TOS API，不再依賴內部套接字），閘道頭改為每次安裝隨機密鑰，移除 undici.bak，並為每個內建二進位補充 SHA-256 與來源說明。"
-important = "以專用非 root 帳戶執行。工作階段與工作區保存在資料卷，解除安裝時保留、purge 時刪除。介面只經 TOS 網頁路由存取，服務僅監聽本機回環。AI 智能體可在你授權的工作目錄內執行命令，開啟寫入權限前請自行確認。 若要用 TOS 共享資料夾作工作區，需在 TOS 控制台給應用使用者 dsh-user 授讀寫權限；清單沒有該使用者時，執行 sudo /usr/local/dsh/bin/grant-share.sh <路徑> rw。 解除安裝會保留資料目錄 /Volume1/@apps/dsh/data 與 dsh-user 帳戶；如需一併刪除，請執行 sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh。"
+important = "以非 root 的 dsh-user 帳戶執行。資料位於 /Volume1/@apps/dsh/data，解除安裝後保留，帳戶亦保留。徹底刪除請執行：sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh。"
 
 [en-us]
 name = "DSH for TOS"
@@ -20,7 +20,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS is an unofficial TerraMaster package of DeepSeek Harness (DSH), the open-source coding agent by DeepSeek under the MIT license. It bundles the original DSH web UI with a fixed Node.js runtime and works offline. Sessions and workspaces stay on the data volume, and the service runs as an unprivileged account behind the TOS web route. Add your own model API key in Settings. Not an official DeepSeek product and not affiliated with or endorsed by DeepSeek."
 release_note = "Fixes the 1.7.3 review items: a per-app auth endpoint backed by the documented TOS API replaces the internal socket, the gateway header now uses a per-install random secret, undici.bak is removed, and every bundled binary lists its SHA-256 and provenance."
-important = "Runs as a dedicated unprivileged account. Sessions and workspaces are stored on the data volume and survive removal and are deleted only on purge. The UI is reached only through the TOS web route and binds to loopback. The agent can execute commands in the directories you grant it — review before enabling write access. To use a TOS shared folder as a workspace, grant dsh-user read-write access in TOS Control Panel. If not listed: sudo /usr/local/dsh/bin/grant-share.sh <path> rw. Uninstalling keeps the app data directory /Volume1/@apps/dsh/data and the dsh-user account. To remove both, run: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Runs as the unprivileged dsh-user account. Data lives in /Volume1/@apps/dsh/data and survives uninstall, as does the account. To delete everything: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [fr-fr]
 name = "DSH pour TOS"
@@ -28,7 +28,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS est un paquet TerraMaster non officiel de DeepSeek Harness (DSH), l'agent de codage open source développé par DeepSeek sous licence MIT. Il embarque l'interface DSH d'origine et un runtime Node.js fixe, et fonctionne hors ligne, les sessions et espaces de travail restent sur le volume de données, le service tourne sans privilèges derrière la route web TOS. Renseignez votre clé API dans les réglages. Produit non officiel, sans lien avec DeepSeek."
 release_note = "Corrige les points de la revue 1.7.3 : un point d'authentification par application basé sur l'API TOS documentée remplace le socket interne, l'en-tête de passerelle utilise un secret aléatoire par installation, undici.bak est supprimé et chaque binaire embarqué documente son SHA-256."
-important = "S'exécute sous un compte dédié non privilégié. Sessions et espaces de travail restent sur le volume de données et survivent à la désinstallation, ils ne sont supprimés qu'avec purge. L'interface n'est accessible que via la route web TOS, le service écoute en boucle locale. L'agent peut exécuter des commandes dans les dossiers autorisés. Pour un dossier partagé TOS comme workspace, donnez à dsh-user l'accès lecture-écriture dans le Panneau, sinon : sudo /usr/local/dsh/bin/grant-share.sh <chemin> rw. La désinstallation conserve le dossier de données /Volume1/@apps/dsh/data et le compte dsh-user. Pour tout supprimer : sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "S'exécute avec le compte non privilégié dsh-user. Les données restent dans /Volume1/@apps/dsh/data après désinstallation, tout comme le compte. Tout supprimer : sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [de-de]
 name = "DSH für TOS"
@@ -36,7 +36,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS ist ein inoffizielles TerraMaster-Paket von DeepSeek Harness (DSH), dem von DeepSeek unter der MIT-Lizenz entwickelten Open-Source-Coding-Agenten. Es enthält die originale DSH-Weboberfläche und eine feste Node.js-Laufzeit, läuft offline, Sitzungen und Workspaces bleiben auf dem Datenvolume, der Dienst läuft unprivilegiert hinter der TOS-Webroute. API-Schlüssel in den Einstellungen eintragen. Kein offizielles DeepSeek-Produkt, nicht mit DeepSeek verbunden."
 release_note = "Behebt die Punkte aus der 1.7.3-Prüfung: ein App-eigener Auth-Endpunkt auf Basis der dokumentierten TOS-API ersetzt den internen Socket, der Gateway-Header nutzt ein pro Installation zufälliges Geheimnis, undici.bak entfällt, und jede mitgelieferte Binärdatei nennt SHA-256 und Herkunft."
-important = "Läuft unter einem eigenen unprivilegierten Konto. Sitzungen und Workspaces liegen auf dem Datenvolume und überstehen das Entfernen, gelöscht werden sie nur bei purge. Die Oberfläche ist nur über die TOS-Webroute erreichbar, der Dienst lauscht auf Loopback. Der Agent kann in freigegebenen Ordnern Befehle ausführen. Um einen TOS-Freigabeordner als Workspace zu nutzen, erteilen Sie dsh-user im TOS-Control-Panel Lese-/Schreibrechte, falls nicht gelistet: sudo /usr/local/dsh/bin/grant-share.sh <Pfad> rw. Beim Deinstallieren bleiben das Datenverzeichnis /Volume1/@apps/dsh/data und das Konto dsh-user erhalten. Zum vollständigen Entfernen: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Läuft als unprivilegiertes Konto dsh-user. Daten liegen in /Volume1/@apps/dsh/data und bleiben bei der Deinstallation erhalten, ebenso das Konto. Alles löschen: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [it-it]
 name = "DSH per TOS"
@@ -44,7 +44,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS è un pacchetto TerraMaster non ufficiale di DeepSeek Harness (DSH), l'agente di coding open source sviluppato da DeepSeek con licenza MIT. Include l'interfaccia DSH originale e un runtime Node.js fisso, funziona offline, sessioni e workspace restano sul volume dati e il servizio gira senza privilegi dietro la rotta web TOS. Inserisci la tua chiave API nelle impostazioni. Prodotto non ufficiale, non affiliato a DeepSeek."
 release_note = "Corregge i punti della revisione 1.7.3: un endpoint di autenticazione per app basato sull'API TOS documentata sostituisce il socket interno, l'header del gateway usa un segreto casuale per installazione, undici.bak viene rimosso e ogni binario incluso riporta SHA-256 e provenienza."
-important = "Gira con un account dedicato non privilegiato. Sessioni e workspace restano sul volume dati e sopravvivono alla rimozione, vengono eliminati solo con purge. L'interfaccia è raggiungibile solo tramite la rotta web TOS e il servizio ascolta su loopback. Per usare una cartella condivisa TOS come workspace, concedi a dsh-user accesso lettura-scrittura nel Pannello TOS, se non elencato: sudo /usr/local/dsh/bin/grant-share.sh <percorso> rw. La disinstallazione conserva la cartella dati /Volume1/@apps/dsh/data e l'account dsh-user. Per rimuoverli: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Eseguito con l'account non privilegiato dsh-user. I dati restano in /Volume1/@apps/dsh/data dopo la disinstallazione, così come l'account. Per eliminare tutto: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [es-es]
 name = "DSH para TOS"
@@ -52,7 +52,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS es un paquete no oficial de TerraMaster de DeepSeek Harness (DSH), el agente de programación open source desarrollado por DeepSeek con licencia MIT. Incluye la interfaz DSH original y un runtime Node.js fijo, funciona sin conexión, las sesiones y los espacios de trabajo quedan en el volumen de datos y el servicio se ejecuta sin privilegios tras la ruta web de TOS. Introduce tu clave API en los ajustes. Producto no oficial, sin relación con DeepSeek."
 release_note = "Corrige los puntos de la revisión 1.7.3: un endpoint de autenticación por aplicación basado en la API TOS documentada sustituye al socket interno, la cabecera de puerta usa un secreto aleatorio por instalación, se elimina undici.bak y cada binario incluido indica su SHA-256."
-important = "Se ejecuta con una cuenta dedicada sin privilegios. Las sesiones y los espacios de trabajo se guardan en el volumen de datos y sobreviven a la desinstalación, solo se borran con purge. La interfaz solo se alcanza por la ruta web de TOS y el servicio escucha en loopback. Para usar una carpeta compartida de TOS como espacio de trabajo, concede a dsh-user acceso de lectura y escritura en el Panel de TOS, si no aparece: sudo /usr/local/dsh/bin/grant-share.sh <ruta> rw. Al desinstalar se conservan la carpeta de datos /Volume1/@apps/dsh/data y la cuenta dsh-user. Para eliminarlas: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Se ejecuta con la cuenta sin privilegios dsh-user. Los datos permanecen en /Volume1/@apps/dsh/data tras desinstalar, igual que la cuenta. Para borrarlo todo: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [hu-hu]
 name = "DSH TOS-hoz"
@@ -60,7 +60,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "A DSH for TOS a DeepSeek Harness (DSH) nem hivatalos TerraMaster-csomagja, a DSH a DeepSeek MIT licencű nyílt forráskódú kódoló ügynöke. Az eredeti DSH felületet és rögzített Node.js futtatókörnyezetet tartalmazza, offline működik, a munkamenetek és munkaterületek az adatköteten maradnak, a szolgáltatás jogosultság nélkül fut a TOS webes útvonala mögött. Az API-kulcsot a beállításokban add meg. Nem hivatalos termék, nem áll kapcsolatban a DeepSeekkel."
 release_note = "Az 1.7.3-as ellenőrzés pontjait javítja: a dokumentált TOS API-ra épülő alkalmazásonkénti hitelesítési végpont váltja a belső socketet, az átjáró fejléc telepítésenkénti véletlen titkot használ, az undici.bak törölve, és minden mellékelt bináris SHA-256-ot kap."
-important = "Saját, nem root fiókkal fut. A munkamenetek és munkaterületek az adatköteten maradnak, eltávolításkor megmaradnak, csak purge esetén törlődnek. A felület csak a TOS webes útvonalán érhető el, a szolgáltatás loopbacken figyel. TOS-megosztott mappa munkaterületként való használatához adj a dsh-usernek olvasás-írás jogot a TOS vezérlőpultjában, ha nem szerepel: sudo /usr/local/dsh/bin/grant-share.sh <útvonal> rw. Az eltávolítás megtartja a /Volume1/@apps/dsh/data adatkönyvtárat és a dsh-user fiókot. Teljes törléshez: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Nem root dsh-user fiókkal fut. Az adatok a /Volume1/@apps/dsh/data helyen maradnak eltávolításkor, a fiók is. Teljes törlés: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [ja-jp]
 name = "DSH（TOS 版）"
@@ -68,7 +68,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS は、DeepSeek が MIT ライセンスで公開しているオープンソースのコーディングエージェント DeepSeek Harness（DSH）の非公式 TerraMaster パッケージです。オリジナルの DSH Web UI と固定バージョンの Node.js を同梱し、オフラインで動作します。セッションとワークスペースはデータボリュームに保存され、サービスは非 root アカウントで TOS の Web ルート経由で動作します。設定で API キーを入力してください。DeepSeek 公式製品ではなく、DeepSeek とは無関係です。"
 release_note = "1.7.3 の指摘を修正しました。公開 TOS API を使うアプリ単位の認証エンドポイントが内部ソケットを置き換え、ゲートヘッダーはインストールごとのランダムな秘密鍵になり、undici.bak を削除し、同梱バイナリに SHA-256 と由来を記載しました。"
-important = "専用の非 root アカウントで動作します。セッションとワークスペースはデータボリュームに保存され、削除時も保持され purge 時のみ削除されます。UI は TOS の Web ルート経由のみ、サービスはループバックで待ち受けます。 TOS の共有フォルダーをワークスペースにするには、TOS コントロールパネルで dsh-user に読み書き権限を付与してください。一覧にない場合: sudo /usr/local/dsh/bin/grant-share.sh <パス> rw アンインストールしてもデータディレクトリ /Volume1/@apps/dsh/data と dsh-user アカウントは残ります。完全に削除するには sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh を実行してください。"
+important = "非 root の dsh-user アカウントで動作します。データは /Volume1/@apps/dsh/data にあり、アンインストール後もアカウントごと残ります。完全削除は sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh を実行してください。"
 
 [ko-kr]
 name = "DSH (TOS 버전)"
@@ -76,7 +76,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS는 DeepSeek이 MIT 라이선스로 공개한 오픈소스 코딩 에이전트 DeepSeek Harness(DSH)의 비공식 TerraMaster 패키지입니다. 원본 DSH 웹 UI와 고정 버전 Node.js를 포함하며 오프라인으로 동작합니다. 세션과 워크스페이스는 데이터 볼륨에 저장되고, 서비스는 비root 계정으로 TOS 웹 경로 뒤에서 실행됩니다. 설정에서 API 키를 입력하세요. DeepSeek 공식 제품이 아니며 DeepSeek과 무관합니다."
 release_note = "1.7.3 검토 지적을 수정했습니다. 문서화된 TOS API 기반의 앱별 인증 엔드포인트가 내부 소켓을 대체하고, 게이트 헤더는 설치마다 무작위 비밀값을 사용하며, undici.bak을 제거하고 포함된 바이너리의 SHA-256을 명시했습니다."
-important = "전용 비root 계정으로 실행됩니다. 세션과 워크스페이스는 데이터 볼륨에 저장되어 제거 시에도 유지되며 purge 시에만 삭제됩니다. UI는 TOS 웹 경로로만 접근되고 서비스는 루프백에서 대기합니다. TOS 공유 폴더를 워크스페이스로 사용하려면 TOS 제어판에서 dsh-user에 읽기/쓰기 권한을 부여하세요. 목록에 없으면: sudo /usr/local/dsh/bin/grant-share.sh <경로> rw 제거해도 데이터 디렉터리 /Volume1/@apps/dsh/data와 dsh-user 계정은 유지됩니다. 모두 삭제하려면 sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh를 실행하세요."
+important = "비 root dsh-user 계정으로 실행됩니다. 데이터는 /Volume1/@apps/dsh/data에 있으며 제거 후에도 계정과 함께 유지됩니다. 모두 삭제하려면 sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh를 실행하세요."
 
 [pl-pl]
 name = "DSH dla TOS"
@@ -84,7 +84,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS to nieoficjalny pakiet DeepSeek Harness (DSH) dla TerraMaster — otwartoźródłowego agenta kodującego DeepSeek na licencji MIT. Zawiera oryginalny interfejs DSH i stałą wersję Node.js, działa offline, sesje i obszary robocze pozostają na woluminie danych, a usługa działa bez uprawnień za trasą webową TOS. Klucz API podaj w ustawieniach. Produkt nieoficjalny, niezwiązany z DeepSeek."
 release_note = "Poprawia uwagi z przeglądu 1.7.3: endpoint uwierzytelniania per aplikacja oparty na udokumentowanym API TOS zastępuje wewnętrzny socket, nagłówek bramy używa losowego sekretu na instalację, usunięto undici.bak, a każdy dołączony plik binarny ma SHA-256."
-important = "Działa na dedykowanym koncie bez uprawnień roota. Sesje i obszary robocze są przechowywane na woluminie danych i przetrwają usunięcie, są kasowane tylko przy purge. Interfejs jest dostępny wyłącznie przez trasę webową TOS, a usługa nasłuchuje na loopbacku. Aby użyć folderu udostępnionego TOS jako obszaru roboczego, nadaj dsh-user uprawnienia odczytu i zapisu w Panelu TOS, jeśli go nie ma: sudo /usr/local/dsh/bin/grant-share.sh <ścieżka> rw. Odinstalowanie zachowuje katalog danych /Volume1/@apps/dsh/data i konto dsh-user. Aby usunąć wszystko: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Działa jako niez uprzywilejowane konto dsh-user. Dane w /Volume1/@apps/dsh/data pozostają po odinstalowaniu, podobnie jak konto. Aby usunąć wszystko: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [ru-ru]
 name = "DSH для TOS"
@@ -92,7 +92,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS — неофициальный пакет DeepSeek Harness (DSH) для TerraMaster, DSH — открытый агент для программирования от DeepSeek под лицензией MIT. Включает оригинальный веб-интерфейс DSH и фиксированную среду Node.js, работает офлайн, сессии и рабочие области хранятся на томе данных, служба работает без привилегий за веб-маршрутом TOS. Укажите API-ключ в настройках. Неофициальный продукт, не связанный с DeepSeek."
 release_note = "Исправлены замечания проверки 1.7.3: эндпоинт аутентификации на уровне приложения на базе документированного API TOS заменяет внутренний сокет, заголовок шлюза использует случайный секрет для каждой установки, undici.bak удалён, а каждый поставляемый бинарный файл имеет SHA-256."
-important = "Работает под отдельной учётной записью без прав root. Сессии и рабочие области хранятся на томе данных и сохраняются при удалении, удаляются только при purge. Интерфейс доступен только через веб-маршрут TOS, служба слушает loopback. Чтобы использовать общую папку TOS как рабочую область, дайте dsh-user права на чтение и запись в панели TOS, если его нет в списке: sudo /usr/local/dsh/bin/grant-share.sh <путь> rw. При удалении сохраняются каталог данных /Volume1/@apps/dsh/data и учётная запись dsh-user. Чтобы удалить всё: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Работает под непривилегированной учётной записью dsh-user. Данные в /Volume1/@apps/dsh/data сохраняются при удалении, как и учётная запись. Удалить всё: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [tr-tr]
 name = "TOS için DSH"
@@ -100,7 +100,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS, DeepSeek'in MIT lisansıyla yayımladığı açık kaynak kodlama ajanı DeepSeek Harness'ın (DSH) resmî olmayan TerraMaster paketidir. Orijinal DSH arayüzü ve sabit Node.js çalışma zamanıyla gelir, çevrimdışı çalışır, oturumlar ve çalışma alanları veri biriminde kalır, hizmet TOS web yolunun arkasında ayrıcalıksız çalışır. API anahtarını ayarlarda girin. Resmî DeepSeek ürünü değildir, DeepSeek ile bağlantılı değildir."
 release_note = "1.7.3 inceleme maddelerini düzeltir: belgelenmiş TOS API'sine dayanan uygulama başına kimlik doğrulama uç noktası iç soketi değiştirir, ağ geçidi başlığı kurulum başına rastgele gizli değer kullanır, undici.bak kaldırılır ve her ikili dosya SHA-256'sını belirtir."
-important = "Ayrıcalıksız özel bir hesapla çalışır. Oturumlar ve çalışma alanları veri biriminde saklanır ve kaldırma sonrası korunur, yalnızca purge ile silinir. Arayüz yalnızca TOS web yolundan erişilir, hizmet loopback üzerinde dinler. Bir TOS paylaşılan klasörünü çalışma alanı olarak kullanmak için TOS Denetim Masası'nda dsh-user'a okuma-yazma izni verin, listede yoksa: sudo /usr/local/dsh/bin/grant-share.sh <yol> rw. Kaldırma işlemi /Volume1/@apps/dsh/data veri dizinini ve dsh-user hesabını korur. Tümünü silmek için: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Ayrıcalıksız dsh-user hesabıyla çalışır. Veriler /Volume1/@apps/dsh/data içinde kalır ve kaldırma sonrası hesap da korunur. Her şeyi silmek için: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [pt-pt]
 name = "DSH para TOS"
@@ -108,7 +108,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS é um pacote TerraMaster não oficial do DeepSeek Harness (DSH), o agente de programação open source desenvolvido pela DeepSeek sob licença MIT. Inclui a interface DSH original e um runtime Node.js fixo, funciona offline, as sessões e áreas de trabalho ficam no volume de dados e o serviço corre sem privilégios atrás da rota web do TOS. Introduza a chave API nas definições. Produto não oficial, sem ligação à DeepSeek."
 release_note = "Corrige os pontos da revisão 1.7.3: um endpoint de autenticação por aplicação baseado na API TOS documentada substitui o socket interno, o cabeçalho do gateway usa um segredo aleatório por instalação, o undici.bak é removido e cada binário incluído indica o SHA-256."
-important = "Executa com uma conta dedicada sem privilégios. As sessões e áreas de trabalho ficam no volume de dados e sobrevivem à remoção, só são eliminadas com purge. A interface só é acessível pela rota web do TOS e o serviço escuta em loopback. Para usar uma pasta partilhada do TOS como área de trabalho, conceda a dsh-user acesso de leitura e escrita no Painel do TOS, se não aparecer: sudo /usr/local/dsh/bin/grant-share.sh <caminho> rw. A desinstalação mantém a pasta de dados /Volume1/@apps/dsh/data e a conta dsh-user. Para remover tudo: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Executa com a conta sem privilégios dsh-user. Os dados ficam em /Volume1/@apps/dsh/data e sobrevivem à desinstalação, tal como a conta. Para apagar tudo: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [ar-sa]
 name = "DSH لنظام TOS"
@@ -116,7 +116,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS حزمة TerraMaster غير رسمية لـ DeepSeek Harness (DSH)، وكيل البرمجة مفتوح المصدر الذي تطوّره DeepSeek بموجب رخصة MIT. تتضمن واجهة DSH الأصلية ووقت تشغيل Node.js ثابتًا، وتعمل دون اتصال؛ تبقى الجلسات ومساحات العمل على وحدة البيانات، وتعمل الخدمة دون امتيازات خلف مسار الويب في TOS. أدخل مفتاح API في الإعدادات. منتج غير رسمي وغير تابع لـ DeepSeek."
 release_note = "يعالج ملاحظات مراجعة 1.7.3: نقطة نهاية مصادقة لكل تطبيق تعتمد على واجهة TOS الموثقة بدل المقبس الداخلي، ورأس البوابة يستخدم سرًا عشوائيًا لكل تثبيت، وحُذف undici.bak، وكل ملف ثنائي مضمّن يذكر SHA-256."
-important = "يعمل بحساب مخصص غير مميز. تبقى الجلسات ومساحات العمل على وحدة البيانات وتُحفظ عند الإزالة؛ لا تُحذف إلا بأمر purge. الواجهة متاحة فقط عبر مسار الويب في TOS، والخدمة تستمع على loopback. يمكن للوكيل تنفيذ أوامر في المجلدات المصرح بها. لاستخدام مجلد مشترك في TOS كمساحة عمل، امنح dsh-user صلاحية القراءة والكتابة في لوحة تحكم TOS؛ إذا لم يظهر: sudo /usr/local/dsh/bin/grant-share.sh <path> rw. تؤدي إزالة التثبيت إلى الاحتفاظ بمجلد البيانات /Volume1/@apps/dsh/data وحساب dsh-user. لإزالة الاثنين: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "يعمل بحساب dsh-user غير الجذري. تبقى البيانات في /Volume1/@apps/dsh/data بعد إزالة التثبيت، وكذلك الحساب. لحذف كل شيء: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [cs-cz]
 name = "DSH pro TOS"
@@ -124,7 +124,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS je neoficiální balíček DeepSeek Harness (DSH) pro TerraMaster, DSH je open-source kódovací agent od DeepSeek pod licencí MIT. Obsahuje původní webové rozhraní DSH a pevný runtime Node.js, funguje offline, relace a pracovní prostory zůstávají na datovém svazku, služba běží bez oprávnění za webovou trasou TOS. API klíč zadejte v nastavení. Neoficiální produkt, nespojený s DeepSeek."
 release_note = "Opravuje připomínky kontroly 1.7.3: koncový bod ověřování pro každou aplikaci nad dokumentovaným rozhraním TOS nahrazuje interní socket, hlavička brány používá náhodné tajemství pro každou instalaci, undici.bak je odstraněn a každý přiložený binární soubor uvádí SHA-256."
-important = "Běží pod vyhrazeným neprivilegovaným účtem. Relace a pracovní prostory zůstávají na datovém svazku a přežijí odebrání, mažou se jen při purge. Rozhraní je dostupné pouze přes webovou trasu TOS, služba naslouchá na loopbacku. Chcete-li použít sdílenou složku TOS jako pracovní prostor, udělte dsh-user práva pro čtení a zápis v Ovládacím panelu TOS, pokud tam není: sudo /usr/local/dsh/bin/grant-share.sh <cesta> rw. Odinstalace zachová datový adresář /Volume1/@apps/dsh/data a účet dsh-user. Pro úplné odstranění: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Běží pod neprivilegovaným účtem dsh-user. Data zůstávají v /Volume1/@apps/dsh/data i po odinstalaci, stejně jako účet. Smazat vše: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [he-il]
 name = "DSH ל-TOS"
@@ -132,7 +132,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS היא חבילת TerraMaster לא רשמית של DeepSeek Harness (DSH), סוכן הקידוד בקוד פתוח שפיתחה DeepSeek ברישיון MIT. החבילה כוללת את ממשק DSH המקורי וסביבת Node.js קבועה, ופועלת ללא אינטרנט, הפעלות ומרחבי עבודה נשמרים בכרך הנתונים, והשירות פועל ללא הרשאות מאחורי נתיב האינטרנט של TOS. הזינו מפתח API בהגדרות. מוצר לא רשמי, שאינו קשור ל-DeepSeek."
 release_note = "מתקן את הערות הבדיקה של 1.7.3: נקודת קצה לאימות לכל אפליקציה מבוססת API TOS המתועד מחליפה את השקע הפנימי, כותרת השער משתמשת בסוד אקראי לכל התקנה, undici.bak הוסר, וכל קובץ בינארי מציין SHA-256."
-important = "פועל בחשבון ייעודי ללא הרשאות. הפעלות ומרחבי עבודה נשמרים בכרך הנתונים ונשארים לאחר הסרה, נמחקים רק עם purge. הממשק נגיש רק דרך נתיב האינטרנט של TOS, והשירות מאזין ב-loopback. כדי להשתמש בתיקייה משותפת של TOS כמרחב עבודה, העניקו ל-dsh-user הרשאת קריאה וכתיבה בלוח הבקרה של TOS, אם הוא לא מופיע: sudo /usr/local/dsh/bin/grant-share.sh <path> rw. הסרת ההתקנה משאירה את תיקיית הנתונים /Volume1/@apps/dsh/data ואת החשבון dsh-user. להסרה מלאה: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "פועל בחשבון dsh-user ללא הרשאות. הנתונים נשמרים ב-/Volume1/@apps/dsh/data גם לאחר הסרה, וגם החשבון. למחיקת הכול: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [id-id]
 name = "DSH untuk TOS"
@@ -140,7 +140,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS adalah paket TerraMaster tidak resmi dari DeepSeek Harness (DSH), agen coding open source yang dikembangkan DeepSeek dengan lisensi MIT. Aplikasi menyertakan antarmuka DSH asli dan runtime Node.js tetap, berfungsi offline, sesi dan ruang kerja tersimpan di volume data, dan layanan berjalan tanpa hak istimewa di balik rute web TOS. Masukkan kunci API Anda di Pengaturan. Produk tidak resmi, tidak berafiliasi dengan DeepSeek."
 release_note = "Memperbaiki temuan tinjauan 1.7.3: endpoint autentikasi per aplikasi berbasis API TOS terdokumentasi menggantikan soket internal, header gateway memakai rahasia acak per pemasangan, undici.bak dihapus, dan setiap biner menyertakan SHA-256."
-important = "Berjalan dengan akun khusus tanpa hak istimewa. Sesi dan ruang kerja tersimpan di volume data dan tetap ada setelah penghapusan, hanya dihapus saat purge. Antarmuka hanya diakses melalui rute web TOS, layanan mendengarkan di loopback. Untuk memakai folder bersama TOS sebagai ruang kerja, beri dsh-user akses baca-tulis di Panel Kontrol TOS, jika tidak terdaftar: sudo /usr/local/dsh/bin/grant-share.sh <path> rw. Menghapus pemasangan mempertahankan direktori data /Volume1/@apps/dsh/data dan akun dsh-user. Untuk menghapus keduanya: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Berjalan dengan akun dsh-user tanpa hak root. Data di /Volume1/@apps/dsh/data tetap ada setelah penghapusan, begitu pula akunnya. Untuk menghapus semua: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [nb-no]
 name = "DSH for TOS"
@@ -148,7 +148,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS er en uoffisiell TerraMaster-pakke av DeepSeek Harness (DSH), kodeagenten med åpen kildekode som DeepSeek utgir under MIT-lisensen. Den inneholder det originale DSH-grensesnittet og en fast Node.js-runtime, fungerer offline, økter og arbeidsområder ligger på datavolumet, og tjenesten kjører uten privilegier bak TOS' nettrute. Legg inn API-nøkkelen i innstillingene. Uoffisielt produkt, ikke tilknyttet DeepSeek."
 release_note = "Retter punktene fra 1.7.3-gjennomgangen: et appspesifikt autentiseringsendepunkt basert på det dokumenterte TOS-API-et erstatter den interne sockelen, gateway-headeren bruker en tilfeldig hemmelighet per installasjon, undici.bak fjernes, og hver medfølgende binær oppgir SHA-256."
-important = "Kjører under en egen ikke-privilegert konto. Økter og arbeidsområder ligger på datavolumet og beholdes ved avinstallering, slettes bare ved purge. Grensesnittet nås bare via TOS' nettrute, og tjenesten lytter på loopback. For å bruke en delt TOS-mappe som arbeidsområde, gi dsh-user lese- og skrivetilgang i TOS-kontrollpanelet, hvis den ikke er oppført: sudo /usr/local/dsh/bin/grant-share.sh <sti> rw. Avinstallering beholder datamappen /Volume1/@apps/dsh/data og dsh-user-kontoen. For å fjerne alt: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Kjører som den upriviligerte kontoen dsh-user. Data ligger i /Volume1/@apps/dsh/data og beholdes ved avinstallering, det gjør også kontoen. Slett alt: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [nl-nl]
 name = "DSH voor TOS"
@@ -156,7 +156,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS is een niet-officieel TerraMaster-pakket van DeepSeek Harness (DSH), de open-source codeeragent die DeepSeek onder de MIT-licentie uitgeeft. Het bevat de originele DSH-interface en een vaste Node.js-runtime, werkt offline, sessies en werkruimten blijven op het datavolume en de dienst draait zonder privileges achter de TOS-webbroute. Voer uw API-sleutel in bij Instellingen. Niet-officieel product, niet verbonden aan DeepSeek."
 release_note = "Lost de punten uit de 1.7.3-review op: een authenticatie-endpoint per app op basis van de gedocumenteerde TOS-API vervangt de interne socket, de gateway-header gebruikt een willekeurig geheim per installatie, undici.bak is verwijderd en elke meegeleverde binary vermeldt zijn SHA-256."
-important = "Draait onder een eigen account zonder privileges. Sessies en werkruimten blijven op het datavolume en blijven na verwijderen bestaan, ze worden alleen bij purge gewist. De interface is alleen bereikbaar via de TOS-webbroute en de dienst luistert op loopback. Om een gedeelde TOS-map als werkruimte te gebruiken, geef dsh-user lees- en schrijfrechten in het TOS-configuratiescherm, staat hij er niet bij: sudo /usr/local/dsh/bin/grant-share.sh <pad> rw. Verwijderen behoudt de datamap /Volume1/@apps/dsh/data en het dsh-user-account. Om alles te verwijderen: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Draait als het niet-geprivilegieerde account dsh-user. Gegevens staan in /Volume1/@apps/dsh/data en blijven na verwijderen staan, net als het account. Alles wissen: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [sv-se]
 name = "DSH för TOS"
@@ -164,7 +164,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS är ett inofficiellt TerraMaster-paket av DeepSeek Harness (DSH), kodagenten med öppen källkod som DeepSeek ger ut under MIT-licensen. Det innehåller det ursprungliga DSH-gränssnittet och en fast Node.js-runtime, fungerar offline, sessioner och arbetsytor ligger på datavolymen och tjänsten körs utan privilegier bakom TOS webbväg. Ange din API-nyckel i inställningarna. Icke-officiell produkt, inte knuten till DeepSeek."
 release_note = "Åtgärdar punkterna från 1.7.3-granskningen: en appspecifik autentiseringsslutpunkt baserad på det dokumenterade TOS-API:et ersätter den interna sockeln, gateway-rubriken använder en slumpmässig hemlighet per installation, undici.bak tas bort och varje medföljande binär anger sin SHA-256."
-important = "Körs under ett eget oprivilegierat konto. Sessioner och arbetsytor ligger på datavolymen och finns kvar efter avinstallation, de raderas endast vid purge. Gränssnittet nås endast via TOS webbväg och tjänsten lyssnar på loopback. För att använda en delad TOS-mapp som arbetsyta, ge dsh-user läs- och skrivbehörighet i TOS kontrollpanel, om den inte listas: sudo /usr/local/dsh/bin/grant-share.sh <sökväg> rw. Avinstallation behåller datamappen /Volume1/@apps/dsh/data och dsh-user-kontot. För att ta bort allt: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Körs som det opriviligierade kontot dsh-user. Data ligger i /Volume1/@apps/dsh/data och finns kvar efter avinstallation, liksom kontot. Radera allt: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
 
 [th-th]
 name = "DSH สำหรับ TOS"
@@ -172,7 +172,7 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS เป็นแพ็กเกจ TerraMaster ที่ไม่เป็นทางการของ DeepSeek Harness (DSH) เอเจนต์เขียนโค้ดโอเพนซอร์สที่ DeepSeek พัฒนาภายใต้สัญญา MIT มาพร้อมอินเทอร์เฟซ DSH ดั้งเดิมและรันไทม์ Node.js เวอร์ชันคงที่ ใช้งานออฟไลน์ได้ เซสชันและเวิร์กสเปซเก็บไว้บนไดรฟ์ข้อมูล บริการทำงานด้วยบัญชีไม่มีสิทธิพิเศษผ่านเส้นทางเว็บของ TOS ใส่คีย์ API ของคุณในการตั้งค่า ไม่ใช่ผลิตภัณฑ์อย่างเป็นทางการของ DeepSeek และไม่มีความเกี่ยวข้องกับ DeepSeek"
 release_note = "แก้ไขข้อตรวจสอบ 1.7.3: ใช้ endpoint ยืนยันตัวตนต่อแอปที่อิง TOS API ที่เผยแพร่แทนซ็อกเก็ตภายใน ส่วนหัวเกตเวย์ใช้รหัสสุ่มต่อการติดตั้ง ลบ undici.bak และระบุ SHA-256 ของไบนารีที่มาพร้อมแพ็กเกจ"
-important = "ทำงานภายใต้บัญชีเฉพาะที่ไม่มีสิทธิ์พิเศษ เซสชันและเวิร์กสเปซอยู่บนดาต้าวอลุ่มและคงอยู่เมื่อถอนการติดตั้ง จะลบก็ต่อเมื่อ purge เท่านั้น อินเทอร์เฟซเข้าถึงได้ผ่านเส้นทางเว็บของ TOS และบริการรับฟังบน loopback หากต้องการใช้โฟลเดอร์แชร์ของ TOS เป็นเวิร์กสเปซ ให้ให้สิทธิ์อ่าน-เขียนแก่ dsh-user ในแผงควบคุม TOS, หากไม่พบในรายการ: sudo /usr/local/dsh/bin/grant-share.sh <path> rw การถอนการติดตั้งจะเก็บโฟลเดอร์ข้อมูล /Volume1/@apps/dsh/data และบัญชี dsh-user ไว้ หากต้องการลบทั้งหมด: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh"
+important = "รันด้วยบัญชี dsh-user ที่ไม่ใช่ root ข้อมูลอยู่ที่ /Volume1/@apps/dsh/data และคงอยู่หลังถอนการติดตั้ง รวมถึงบัญชี ลบทั้งหมดด้วย sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh"
 
 [vi-vn]
 name = "DSH cho TOS"
@@ -180,4 +180,4 @@ auth = "SurpassHither"
 version = "1.7.5"
 descript = "DSH for TOS là gói TerraMaster không chính thức của DeepSeek Harness (DSH), công cụ lập trình mã nguồn mở do DeepSeek phát hành theo giấy phép MIT. Gói bao gồm giao diện DSH gốc và Node.js phiên bản cố định, hoạt động ngoại tuyến, phiên và không gian làm việc lưu trên ổ dữ liệu, dịch vụ chạy không đặc quyền sau tuyến web TOS. Nhập khóa API của bạn trong Cài đặt. Không phải sản phẩm chính thức của DeepSeek và không liên kết với DeepSeek."
 release_note = "Khắc phục các mục đánh giá 1.7.3: endpoint xác thực riêng cho ứng dụng dựa trên API TOS đã công bố thay cho socket nội bộ, tiêu đề cổng dùng bí mật ngẫu nhiên mỗi lần cài, đã xóa undici.bak và mỗi tệp nhị phân kèm SHA-256."
-important = "Chạy dưới tài khoản chuyên dụng không có đặc quyền. Phiên và không gian làm việc lưu trên ổ dữ liệu và được giữ lại khi gỡ cài đặt, chỉ bị xóa khi purge. Giao diện chỉ truy cập qua tuyến web của TOS, dịch vụ lắng nghe trên loopback. Để dùng thư mục chia sẻ TOS làm không gian làm việc, cấp quyền đọc-ghi cho dsh-user trong Bảng điều khiển TOS, nếu không thấy: sudo /usr/local/dsh/bin/grant-share.sh <path> rw. Gỡ cài đặt vẫn giữ thư mục dữ liệu /Volume1/@apps/dsh/data và tài khoản dsh-user. Để xóa cả hai: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
+important = "Chạy bằng tài khoản dsh-user không có quyền root. Dữ liệu ở /Volume1/@apps/dsh/data và vẫn còn sau khi gỡ cài đặt, kể cả tài khoản. Xóa tất cả: sudo SH_DSH_PURGE_DATA=1 dpkg --purge dsh."
